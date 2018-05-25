@@ -2,12 +2,13 @@ import discord
 import json
 import base64
 import sys
-sys.path.append('C:\\Users\\Erik\\Documents\\GitHub\\Wiki-scripts')
-from analytics import main as wiki_analytics
-from new_fff import main as wiki_new_fff
 
 with open('config.json', 'r') as f:
   config = json.load(f)
+
+sys.path.append(config['path_to_wiki_scripts'])
+from analytics import main as wiki_analytics
+from new_fff import main as wiki_new_fff
 
 if config['token'] == '':
   print('No token.')
@@ -18,7 +19,6 @@ client = discord.Client()
 
 @client.event
 async def on_message(message):
-  # dont reply to bots
   if message.author.bot:
     return
   
