@@ -4,6 +4,7 @@ import discord
 import feedparser
 import json
 import sys
+import time
 
 with open('config.json', 'r') as f:
   config = json.load(f)
@@ -21,16 +22,19 @@ with open('feeds.json', 'r') as f:
 async def update_feeds():
   await client.wait_until_ready()
   while not client.is_closed:
+    debug_log('Checking feeds')
     for name, entry in feeds.items():
       feed = feedparser.parse(entry['url'])
       if feed.entries[0].updated > entry['time_latest_entry'] and name == 'fff':
         msg = 'Ran wiki script:\n' + wiki_analytics() + '\n' + wiki_new_fff()
         channel = client.get_channel(entry['channel'])
-        print(msg)
+        debug_log(msg)
         await client.send_message(channel, msg)
         feeds[name]['time_latest_entry'] = feed.entries[0].updated
         with open('feeds.json', 'w') as f:
           json.dump(feeds, f)
+      else:
+        debug_log('Feed {} was not updated.'.format(name))
     await asyncio.sleep(300)
 
 @client.event
@@ -47,9 +51,12 @@ async def on_message(message):
 
 @client.event
 async def on_ready():
-  print('Logged in as')
-  print(client.user.name)
-  print('------')
+  debug_log('Logged in as')
+  debug_log(client.user.name)
+  debug_log('------')
+
+def debug_log(msg):
+  print(time.asctime() + ' ' + msg)
 
 loop = asyncio.get_event_loop()
 try:
