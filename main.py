@@ -26,25 +26,23 @@ client = discord.Client()
 with open('feeds.json', 'r') as f:
   feeds = json.load(f)
 
-async def update_feeds():
+async def update_feed(name, feed_data, feeds):
   await client.wait_until_ready()
   while not client.is_closed:
     try:
-      await check_feeds()
+      await check_feed(name, feed_data, feeds)
     except:
       error_log(traceback.format_exc())
-    await asyncio.sleep(60)
+    await asyncio.sleep(feed_data['sleep_for'])
 
-async def check_feeds():
-  debug_print('Checking feeds')
-  for name, feed_data in feeds.items():
-    feed = feedparser.parse(feed_data['url'])
-    if get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry'] and name == 'fff':
-      await fff_updated(name, feed_data, feed, feeds)
-    elif get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry'] and name == 'wiki':
-      await wiki_updated(name, feed_data, feed, feeds)
-    else:
-      info_log(f'Feed "{name}" was not updated.')
+async def check_feed(name, feed_data, feeds):
+  feed = feedparser.parse(feed_data['url'])
+  if get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry'] and name == 'fff':
+    await fff_updated(name, feed_data, feed, feeds)
+  elif get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry'] and name == 'wiki':
+    await wiki_updated(name, feed_data, feed, feeds)
+  else:
+    info_log(f'Feed "{name}" was not updated.')
 
 async def fff_updated(name, feed_data, feed, feeds):
   msg = 'Ran wiki script:\n' + wiki_analytics() + '\n' + wiki_new_fff()
@@ -107,11 +105,15 @@ def debug_print(msg):
 
 loop = asyncio.get_event_loop()
 try:
-  task = loop.create_task(update_feeds())
+  tasks = []
+  for name, feed_data in feeds.items():
+    task = loop.create_task(update_feed(name, feed_data, feeds))
+    tasks.append(task)
   loop.run_until_complete(client.start(TOKEN))
 except KeyboardInterrupt:
   info_log('Received KeyboardInterrupt, logging out')
-  task.cancel()
+  for task in tasks:
+    task.cancel()
   loop.run_until_complete(client.logout())
 except:
   error_log(traceback.format_exc())
