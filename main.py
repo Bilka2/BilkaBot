@@ -1,11 +1,15 @@
 import asyncio
 import base64
+import datetime
 import discord
 import feedparser
+import html
 import json
 import logging
+import re
 import sys
 import time
+import tomd
 import traceback
 
 logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt= "%Y-%m-%d %H:%M:%S", level=logging.INFO, filename='log.log')
@@ -33,18 +37,44 @@ async def update_feeds():
 
 async def check_feeds():
   debug_print('Checking feeds')
-  for name, entry in feeds.items():
-    feed = feedparser.parse(entry['url'])
-    if feed.entries[0].updated > entry['time_latest_entry'] and name == 'fff':
-      msg = 'Ran wiki script:\n' + wiki_analytics() + '\n' + wiki_new_fff()
-      channel = client.get_channel(entry['channel'])
-      info_log(msg)
-      await client.send_message(channel, msg)
-      feeds[name]['time_latest_entry'] = feed.entries[0].updated
-      with open('feeds.json', 'w') as f:
-        json.dump(feeds, f)
+  for name, feed_data in feeds.items():
+    feed = feedparser.parse(feed_data['url'])
+    if get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry'] and name == 'fff':
+      await fff_updated(name, feed_data, feed, feeds)
+    elif get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry'] and name == 'wiki':
+      await wiki_updated(name, feed_data, feed, feeds)
     else:
       info_log(f'Feed "{name}" was not updated.')
+
+async def fff_updated(name, feed_data, feed, feeds):
+  msg = 'Ran wiki script:\n' + wiki_analytics() + '\n' + wiki_new_fff()
+  channel = client.get_channel(feed_data['channel'])
+  info_log(msg)
+  await client.send_message(channel, msg)
+  feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
+  with open('feeds.json', 'w') as f:
+    json.dump(feeds, f)
+
+async def wiki_updated(name, feed_data, feed, feeds):
+  time_latest_entry = feed_data['time_latest_entry']
+  for i, entry in enumerate(feed.entries):
+    if get_formatted_time(entry) > time_latest_entry:
+      info_log('Found new wiki entry made on ' + entry.updated)
+      summary = ''
+      if re.search('<p.*?>.*?<\/p>', entry.summary):
+        summary = html.unescape(tomd.convert(re.search('<p.*?>.*?<\/p>', entry.summary).group()))
+        summary = re.sub(r"\((\/\S*)\)", r"(https://wiki.factorio.com\1)", summary)
+      embed = discord.Embed(title = f'{entry.author} changed {entry.title}', color = 14103594, timestamp = datetime.datetime(*entry.updated_parsed[0:6]), url = entry.link, description = summary)
+      channel = client.get_channel(feed_data['channel'])
+      await client.send_message(channel, embed=embed)
+    else:
+      break
+  feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
+  with open('feeds.json', 'w') as f:
+    json.dump(feeds, f)
+
+def get_formatted_time(entry):
+  return time.strftime("%Y-%m-%dT%H:%M:%S+00:00", entry.updated_parsed)
 
 @client.event
 async def on_message(message):

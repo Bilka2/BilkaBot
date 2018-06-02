@@ -19,5 +19,6 @@ print(base64.b64encode('<TOKEN>'.encode('utf8')).decode('utf8'))
 Dependencies:
 * feedparser
 * discord.py
+* tomd
 * local clone of https://github.com/Bilka2/Wiki-scripts
   * requests
