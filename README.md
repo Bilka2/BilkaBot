@@ -17,6 +17,7 @@ print(base64.b64encode('<TOKEN>'.encode('utf8')).decode('utf8'))
 ```
 
 Dependencies:
+Python 3.6.4+
 * feedparser
 * discord.py
 * tomd
