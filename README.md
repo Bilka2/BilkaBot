@@ -16,6 +16,29 @@ import base64
 print(base64.b64encode('<TOKEN>'.encode('utf8')).decode('utf8'))
 ```
 
+feeds.json:
+```json
+{
+"fff":
+	{"url": "https://www.factorio.com/blog/rss",
+	"channel": "<id>",
+	"time_latest_entry": "<time.strftime(\"%Y-%m-%dT%H:%M:%S+00:00\", time)>",
+	"sleep_for": 60},
+"wiki":
+	{"url": "https://wiki.factorio.com/api.php?days=14&limit=50&action=feedrecentchanges&feedformat=rss&hidebots=1",
+	"channel": "<id>",
+	"time_latest_entry": "<time.strftime(\"%Y-%m-%dT%H:%M:%S+00:00\", time)>",
+	"sleep_for": 150},
+"forums_news":
+	{"url": "https://forums.factorio.com/feed.php?mode=news",
+	"channel": "<id>",
+	"time_latest_entry": "<time.strftime(\"%Y-%m-%dT%H:%M:%S+00:00\", time)>",
+	"sleep_for": 60,
+	"reddit_rss": "https://www.reddit.com/user/FactorioTeam/.rss",
+	"webhook_url": "<url>"}
+}
+```
+
 Dependencies:
 Python 3.6.4+
 * feedparser
