@@ -66,6 +66,7 @@ async def wiki_updated(name, feed_data, feed, feeds):
       if re.search('<p.*?>.*?<\/p>', entry.summary):
         summary = html.unescape(tomd.convert(re.search('<p.*?>.*?<\/p>', entry.summary).group()))
         summary = re.sub(r'\((\/\S*)\)', r'(https://wiki.factorio.com\1)', summary)
+        summary = re.sub('<bdi>|<\/bdi>', '', summary)
       embed = discord.Embed(title = f'{entry.author} changed {entry.title}', color = 14103594, timestamp = datetime.datetime(*entry.updated_parsed[0:6]), url = entry.link, description = summary)
       channel = client.get_channel(feed_data['channel'])
       await client.send_message(channel, embed=embed)
@@ -93,7 +94,7 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         
         webhook_url = feed_data['webhook_url']
         forum_post_number = re.search('^https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)', entry.link).group(1)
-        announcement_msg = f'@here Version {version} released.\nhttps://forums.factorio.com/{forum_post_number}' + f'\n{reddit_entry.link}' if reddit_entry else ''
+        announcement_msg = f'@here Version {version} released.\n<https://forums.factorio.com/{forum_post_number}>' + f'\n<{reddit_entry.link}>' if reddit_entry else ''
         info_log(announcement_msg)
         announcement = {}
         announcement['content'] = announcement_msg
@@ -125,7 +126,7 @@ async def get_version_entry_from_reddit(entry_title, reddit_url, iteration):
   await get_version_entry_from_reddit(entry_title, reddit_url, iteration+1)
 
 def get_formatted_time(entry):
-  return time.strftime("%Y-%m-%dT%H:%M:%S+00:00", entry.updated_parsed)
+  return time.strftime('%Y-%m-%dT%H:%M:%S+00:00', entry.updated_parsed)
 
 @client.event
 async def on_message(message):
