@@ -21,5 +21,6 @@ Python 3.6.4+
 * feedparser
 * discord.py
 * tomd
+* requests
 * local clone of https://github.com/Bilka2/Wiki-scripts
   * requests
