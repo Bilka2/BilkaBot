@@ -148,7 +148,10 @@ async def on_ready():
 
 def error_log(msg):
   print(time.asctime() + ' ' + msg)
-  logging.error(msg)
+  try:
+    logging.error(msg)
+  except:
+    print(time.asctime() + ' Error logging failed.')
 
 def info_log(msg):
   print(time.asctime() + ' ' + msg)
@@ -170,10 +173,6 @@ except KeyboardInterrupt:
     task.cancel()
   loop.run_until_complete(client.logout())
 except:
-  try:
-    error_log(traceback.format_exc())
-  except:
-    print(time.asctime() + ' Error logging failed.')
-    print(time.asctime() + ' ' + traceback.format_exc()
+  error_log(traceback.format_exc())
 finally:
   loop.close()
