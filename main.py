@@ -13,7 +13,7 @@ import time
 import tomd
 import traceback
 
-logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt= "%Y-%m-%d %H:%M:%S", level=logging.INFO, filename='log.log')
+logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt= "%Y-%m-%d %H:%M:%S", level=logging.WARNING, filename='log.log')
 with open('config.json', 'r') as f:
   config = json.load(f)
 
@@ -170,6 +170,10 @@ except KeyboardInterrupt:
     task.cancel()
   loop.run_until_complete(client.logout())
 except:
-  error_log(traceback.format_exc())
+  try:
+    error_log(traceback.format_exc())
+  except:
+    print(time.asctime() + ' Error logging failed.')
+    print(time.asctime() + ' ' + traceback.format_exc()
 finally:
   loop.close()
