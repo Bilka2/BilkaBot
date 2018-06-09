@@ -172,7 +172,5 @@ except KeyboardInterrupt:
   for task in tasks:
     task.cancel()
   loop.run_until_complete(client.logout())
-except:
-  error_log(traceback.format_exc())
 finally:
   loop.close()
