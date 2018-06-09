@@ -38,7 +38,7 @@ async def update_feed(name, feed_data, feeds):
     await asyncio.sleep(feed_data['sleep_for'])
 
 async def check_feed(name, feed_data, feeds):
-  feed = feedparser.parse(feed_data['url'])
+  feed = await loop.run_in_executor(None, feedparser.parse, feed_data['url'])
   if get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry'] and name == 'fff':
     await fff_updated(name, feed_data, feed, feeds)
   elif get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry'] and name == 'wiki':
