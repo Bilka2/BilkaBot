@@ -112,12 +112,10 @@ async def forums_news_updated(name, feed_data, feed, feeds):
     json.dump(feeds, f)
 
 async def get_version_entry_from_reddit(entry_title, reddit_url, iteration):
-  reddit_feed = feedparser.parse(reddit_url)
-  for i, entry in enumerate(reddit_feed.entries):
+  reddit_feed = await loop.run_in_executor(None, feedparser.parse, reddit_url)
+  for i, entry in enumerate(reddit_feed.entries[:5]):
     if entry.title == entry_title:
       return entry
-    if i > 5: #limit to the 5 latests entries
-      break
   #couldn't find new version on reddit
   if iteration == 8-1:
     error_log(f'Could not find reddit post for {entry_title} within 8 * 15 seconds. Aborting.')
