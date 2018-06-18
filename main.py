@@ -52,6 +52,12 @@ async def fff_updated(name, feed_data, feed, feeds):
   msg = 'Ran wiki script:\n' + wiki_analytics() + '\n' + wiki_new_fff()
   channel = client.get_channel(feed_data['channel'])
   info_log(msg)
+  url = feed.entries[0].link
+  title = feed.entries[0].title
+  announcement = {}
+  announcement['content'] = f'@here {title}\n<{url}>'
+  for url in feed_data['webhook_urls']:
+    post_data_to_webhook(url, json.dumps(announcement))
   await client.send_message(channel, msg)
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
@@ -92,17 +98,13 @@ async def forums_news_updated(name, feed_data, feed, feeds):
           embed = discord.Embed(title = f'Version {version} is out but the reddit post could not be found.', color = 0xff0000, timestamp = datetime.datetime(*entry.updated_parsed[0:6]), url = entry.link)
           await client.send_message(channel, '<@204512563197640704>', embed=embed)
         
-        webhook_url = feed_data['webhook_url']
         forum_post_number = re.search('^https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)', entry.link).group(1)
         announcement_msg = f'@here Version {version} released.\n<https://forums.factorio.com/{forum_post_number}>' + f'\n<{reddit_entry.link}>' if reddit_entry else ''
         info_log(announcement_msg)
         announcement = {}
         announcement['content'] = announcement_msg
-        result = requests.post(webhook_url, data=json.dumps(announcement), headers={'Content-Type': 'application/json'})
-        try:
-          result.raise_for_status()
-        except requests.exceptions.HTTPError as err:
-          error_log(err)
+        for url in feed_data['webhook_urls']:
+          post_data_to_webhook(url, json.dumps(announcement))
         wiki_msg = wiki_new_version(forum_post_number, version)
         await client.send_message(channel, wiki_msg)
     else:
@@ -122,6 +124,13 @@ async def get_version_entry_from_reddit(entry_title, reddit_url, iteration):
     return False
   await asyncio.sleep(15)
   await get_version_entry_from_reddit(entry_title, reddit_url, iteration+1)
+  
+def post_data_to_webhook(webhook_url, data):
+  result = requests.post(webhook_url, data=data, headers={'Content-Type': 'application/json'})
+  try:
+    result.raise_for_status()
+  except requests.exceptions.HTTPError as err:
+    error_log(err)
 
 def get_formatted_time(entry):
   return time.strftime('%Y-%m-%dT%H:%M:%S+00:00', entry.updated_parsed)
