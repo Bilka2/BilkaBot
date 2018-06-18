@@ -21,6 +21,7 @@ sys.path.append(config['path_to_wiki_scripts'])
 from analytics import main as wiki_analytics
 from new_fff import main as wiki_new_fff
 from new_version import main as wiki_new_version
+from redirects import main as wiki_redirects
 
 TOKEN = base64.b64decode(config['token']).decode('utf-8')
 client = discord.Client()
@@ -49,7 +50,7 @@ async def check_feed(name, feed_data, feeds):
     info_log(f'Feed "{name}" was not updated.')
 
 async def fff_updated(name, feed_data, feed, feeds):
-  msg = 'Ran wiki script:\n' + wiki_analytics() + '\n' + wiki_new_fff()
+  msg = 'Ran wiki script:\n' + wiki_analytics() + '\n' + wiki_new_fff() + '\n' + wiki_redirects()
   channel = client.get_channel(feed_data['channel'])
   info_log(msg)
   url = feed.entries[0].link
