@@ -22,6 +22,7 @@ from analytics import main as wiki_analytics
 from new_fff import main as wiki_new_fff
 from new_version import main as wiki_new_version
 from redirects import main as wiki_redirects
+from wanted_pages import main as wiki_wanted_pages
 
 TOKEN = base64.b64decode(config['token']).decode('utf-8')
 client = discord.Client()
@@ -50,15 +51,15 @@ async def check_feed(name, feed_data, feeds):
     info_log(f'Feed "{name}" was not updated.')
 
 async def fff_updated(name, feed_data, feed, feeds):
-  msg = 'Ran wiki script:\n' + wiki_analytics() + '\n' + wiki_new_fff() + '\n' + wiki_redirects()
-  channel = client.get_channel(feed_data['channel'])
-  info_log(msg)
   url = feed.entries[0].link
   title = feed.entries[0].title
   announcement = {}
   announcement['content'] = f'@here {title}\n<{url}>'
   for url in feed_data['webhook_urls']:
     post_data_to_webhook(url, json.dumps(announcement))
+  msg = 'Ran wiki script:\n' + wiki_analytics() + '\n' + wiki_new_fff() + '\n' + wiki_redirects() + '\n' + wiki_wanted_pages(testing = False)
+  info_log(msg)
+  channel = client.get_channel(feed_data['channel'])
   await client.send_message(channel, msg)
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
@@ -145,7 +146,7 @@ async def on_message(message):
     msg = 'Hello {0.author.mention}'.format(message)
     await client.send_message(message.channel, msg)
   if message.content.startswith('!friday') and message.author.id == '204512563197640704':
-    msg = wiki_analytics() + '\n' + wiki_new_fff()
+    msg = wiki_analytics() + '\n' + wiki_new_fff() + '\n' + wiki_redirects() + '\n' + wiki_wanted_pages(testing = False)
     await client.send_message(message.channel, msg)
 
 @client.event
