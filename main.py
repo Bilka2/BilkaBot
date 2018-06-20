@@ -57,9 +57,8 @@ async def fff_updated(name, feed_data, feed, feeds):
   announcement['content'] = f'@here {title}\n<{url}>'
   for url in feed_data['webhook_urls']:
     post_data_to_webhook(url, json.dumps(announcement))
-  msg = 'Ran wiki script:\n' + wiki_analytics() + '\n' + wiki_new_fff() + '\n' + wiki_redirects() + '\n' + wiki_wanted_pages(testing = False)
-  info_log(msg)
   channel = client.get_channel(feed_data['channel'])
+  msg = await run_friday_scripts()
   await client.send_message(channel, msg)
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
@@ -146,8 +145,19 @@ async def on_message(message):
     msg = 'Hello {0.author.mention}'.format(message)
     await client.send_message(message.channel, msg)
   if message.content.startswith('!friday') and message.author.id == '204512563197640704':
-    msg = wiki_analytics() + '\n' + wiki_new_fff() + '\n' + wiki_redirects() + '\n' + wiki_wanted_pages(testing = False)
+    msg = await run_friday_scripts()
     await client.send_message(message.channel, msg)
+  
+
+async def run_friday_scripts():
+  msg = ''
+  msg += await loop.run_in_executor(None, wiki_analytics) + '\n'
+  msg += await loop.run_in_executor(None, wiki_new_fff) + '\n'
+  msg += await loop.run_in_executor(None, wiki_redirects) + '\n'
+  msg += await loop.run_in_executor(None, wiki_wanted_pages, False)
+  info_log(msg)
+  return msg
+  
 
 @client.event
 async def on_ready():
