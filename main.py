@@ -57,12 +57,12 @@ async def fff_updated(name, feed_data, feed, feeds):
   announcement['content'] = f'@here {title}\n<{url}>'
   for url in feed_data['webhook_urls']:
     post_data_to_webhook(url, json.dumps(announcement))
-  channel = client.get_channel(feed_data['channel'])
-  msg = await run_friday_scripts()
-  await client.send_message(channel, msg)
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
+    msg = await run_friday_scripts()
+  channel = client.get_channel(feed_data['channel'])
+  await client.send_message(channel, msg)
 
 async def wiki_updated(name, feed_data, feed, feeds):
   time_latest_entry = feed_data['time_latest_entry']
