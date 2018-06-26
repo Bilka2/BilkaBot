@@ -13,22 +13,22 @@ import time
 import tomd
 import traceback
 
-logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt= "%Y-%m-%d %H:%M:%S", level=logging.WARNING, filename='log.log')
 with open('config.json', 'r') as f:
   config = json.load(f)
-
 sys.path.append(config['path_to_wiki_scripts'])
+
 from analytics import main as wiki_analytics
 from new_fff import main as wiki_new_fff
 from new_version import main as wiki_new_version
 from redirects import main as wiki_redirects
 from wanted_pages import main as wiki_wanted_pages
 
+logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt= "%Y-%m-%d %H:%M:%S", level=logging.WARNING, filename='log.log')
 TOKEN = base64.b64decode(config['token']).decode('utf-8')
 client = discord.Client()
-
 with open('feeds.json', 'r') as f:
   feeds = json.load(f)
+
 
 async def update_feed(name, feed_data, feeds):
   await client.wait_until_ready()
@@ -38,6 +38,7 @@ async def update_feed(name, feed_data, feeds):
     except:
       error_log(traceback.format_exc())
     await asyncio.sleep(feed_data['sleep_for'])
+
 
 async def check_feed(name, feed_data, feeds):
   feed = await loop.run_in_executor(None, feedparser.parse, feed_data['url'])
@@ -50,6 +51,7 @@ async def check_feed(name, feed_data, feeds):
   else:
     info_log(f'Feed "{name}" was not updated.')
 
+
 async def fff_updated(name, feed_data, feed, feeds):
   url = feed.entries[0].link
   title = feed.entries[0].title
@@ -60,9 +62,10 @@ async def fff_updated(name, feed_data, feed, feeds):
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
-    msg = await run_friday_scripts()
+  msg = await run_friday_scripts()
   channel = client.get_channel(feed_data['channel'])
   await client.send_message(channel, msg)
+
 
 async def wiki_updated(name, feed_data, feed, feeds):
   time_latest_entry = feed_data['time_latest_entry']
@@ -82,6 +85,7 @@ async def wiki_updated(name, feed_data, feed, feeds):
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
+
 
 async def forums_news_updated(name, feed_data, feed, feeds):
   time_latest_entry = feed_data['time_latest_entry']
@@ -114,6 +118,7 @@ async def forums_news_updated(name, feed_data, feed, feeds):
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
 
+
 async def get_version_entry_from_reddit(entry_title, reddit_url, iteration):
   reddit_feed = await loop.run_in_executor(None, feedparser.parse, reddit_url)
   for i, entry in enumerate(reddit_feed.entries[:5]):
@@ -125,7 +130,8 @@ async def get_version_entry_from_reddit(entry_title, reddit_url, iteration):
     return False
   await asyncio.sleep(15)
   await get_version_entry_from_reddit(entry_title, reddit_url, iteration+1)
-  
+
+
 def post_data_to_webhook(webhook_url, data):
   result = requests.post(webhook_url, data=data, headers={'Content-Type': 'application/json'})
   try:
@@ -133,8 +139,10 @@ def post_data_to_webhook(webhook_url, data):
   except requests.exceptions.HTTPError as err:
     error_log(err)
 
+
 def get_formatted_time(entry):
   return time.strftime('%Y-%m-%dT%H:%M:%S+00:00', entry.updated_parsed)
+
 
 @client.event
 async def on_message(message):
@@ -165,6 +173,7 @@ async def on_ready():
   info_log(client.user.name)
   info_log('------')
 
+
 def error_log(msg):
   print(time.asctime() + ' ' + msg)
   try:
@@ -172,12 +181,15 @@ def error_log(msg):
   except:
     print(time.asctime() + ' Error logging failed.')
 
+
 def info_log(msg):
   print(time.asctime() + ' ' + msg)
   logging.info(msg)
-  
+
+
 def debug_print(msg):
   print(time.asctime() + ' ' + msg)
+
 
 loop = asyncio.get_event_loop()
 try:
