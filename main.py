@@ -64,6 +64,7 @@ async def fff_updated(name, feed_data, feed, feeds):
     json.dump(feeds, f)
   msg = await run_friday_scripts()
   channel = client.get_channel(feed_data['channel'])
+  info_log(msg)
   await client.send_message(channel, msg)
 
 
@@ -150,22 +151,53 @@ async def on_message(message):
     return
   
   if message.content.startswith('!hello'):
-    msg = 'Hello {0.author.mention}'.format(message)
+    msg = f'Hello {message.author.mention}'
     await client.send_message(message.channel, msg)
   if message.content.startswith('!friday') and message.author.id == '204512563197640704':
+    info_log("Running friday scripts")
     msg = await run_friday_scripts()
+    info_log(msg)
     await client.send_message(message.channel, msg)
-  
+  if message.content.startswith('!wanted_pages'):
+    if '467029685914828829' not in [role.id for role in message.author.roles]:
+      await client.send_message(message.channel, 'You may not run this command.')
+      return
+    info_log("Running wanted pages script")
+    await client.send_message(message.channel, 'Running script, please be patient')
+    msg = await loop.run_in_executor(None, wiki_wanted_pages, False)
+    output = [pretty_edit_response(line) for line in msg]
+    await client.send_message(message.channel, '\n'.join(output))
+  if message.content.startswith('!redirects'):
+    if '467029685914828829' not in [role.id for role in message.author.roles]:
+      await client.send_message(message.channel, 'You may not run this command.')
+      return
+    info_log("Running redirects script")
+    await client.send_message(message.channel, 'Running script, please be patient')
+    msg = await loop.run_in_executor(None, wiki_redirects)
+    await client.send_message(message.channel, pretty_edit_response(msg))
+    
 
 async def run_friday_scripts():
-  msg = ''
-  msg += await loop.run_in_executor(None, wiki_analytics) + '\n'
-  msg += await loop.run_in_executor(None, wiki_new_fff) + '\n'
-  msg += await loop.run_in_executor(None, wiki_redirects) + '\n'
-  msg += await loop.run_in_executor(None, wiki_wanted_pages, False)
+  msg = []
+  msg.append(await loop.run_in_executor(None, wiki_analytics))
+  msg.append(await loop.run_in_executor(None, wiki_new_fff))
+  msg.append(await loop.run_in_executor(None, wiki_redirects))
+  msg.extend(await loop.run_in_executor(None, wiki_wanted_pages, False))
+  msg = [pretty_edit_response(line) for line in msg]
+  msg = '\n'.join(msg)
   info_log(msg)
   return msg
-  
+
+
+def pretty_edit_response(response):
+  if not re.search('title":"([^"]+)"', response) or not re.search('result":"([^"]+)"', response):
+    return response
+  title = re.search('title":"([^"]+)"', response).group(1)
+  result = re.search('result":"([^"]+)"', response).group(1)
+  ret = f'Edited {title}: {result}'
+  if '"nochange"' in response:
+    ret += ', nochange'
+  return ret
 
 @client.event
 async def on_ready():
