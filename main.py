@@ -23,7 +23,7 @@ from new_version import main as wiki_new_version
 from redirects import main as wiki_redirects
 from wanted_pages import main as wiki_wanted_pages
 
-logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt= "%Y-%m-%d %H:%M:%S", level=logging.WARNING, filename='log.log')
+logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt= "%Y-%m-%d %H:%M:%S", level=logging.INFO, filename='log.log')
 TOKEN = base64.b64decode(config['token']).decode('utf-8')
 client = discord.Client()
 with open('feeds.json', 'r') as f:
@@ -65,6 +65,7 @@ async def fff_updated(name, feed_data, feed, feeds):
   msg = await run_friday_scripts()
   channel = client.get_channel(feed_data['channel'])
   info_log(msg)
+  info_log(str(len(msg)))
   await client.send_message(channel, msg)
 
 
@@ -157,6 +158,7 @@ async def on_message(message):
     info_log("Running friday scripts")
     msg = await run_friday_scripts()
     info_log(msg)
+    info_log(str(len(msg)))
     await client.send_message(message.channel, msg)
   if message.content.startswith('!wanted_pages'):
     if '467029685914828829' not in [role.id for role in message.author.roles]:
@@ -165,8 +167,10 @@ async def on_message(message):
     info_log("Running wanted pages script")
     await client.send_message(message.channel, 'Running script, please be patient')
     msg = await loop.run_in_executor(None, wiki_wanted_pages, False)
-    output = [pretty_edit_response(line) for line in msg]
-    await client.send_message(message.channel, '\n'.join(output))
+    output = '\n'.join([pretty_edit_response(line) for line in msg])
+    info_log(output)
+    info_log(str(len(output)))
+    await client.send_message(message.channel, output)
   if message.content.startswith('!redirects'):
     if '467029685914828829' not in [role.id for role in message.author.roles]:
       await client.send_message(message.channel, 'You may not run this command.')
@@ -183,9 +187,7 @@ async def run_friday_scripts():
   msg.append(await loop.run_in_executor(None, wiki_new_fff))
   msg.append(await loop.run_in_executor(None, wiki_redirects))
   msg.extend(await loop.run_in_executor(None, wiki_wanted_pages, False))
-  msg = [pretty_edit_response(line) for line in msg]
-  msg = '\n'.join(msg)
-  info_log(msg)
+  msg = '\n'.join([pretty_edit_response(line) for line in msg])
   return msg
 
 
