@@ -24,7 +24,7 @@ feeds.json:
 	"channel": "<id>",
 	"time_latest_entry": "<time.strftime('%Y-%m-%dT%H:%M:%S+00:00', time)>",
 	"sleep_for": 60,
-  "webhook_urls": ["<url>", "<url>"]},
+	"webhook_urls": ["<url>", "<url>"]},
 "wiki":
 	{"url": "https://wiki.factorio.com/api.php?days=14&limit=50&action=feedrecentchanges&feedformat=rss&hidebots=1",
 	"channel": "<id>",
@@ -36,6 +36,11 @@ feeds.json:
 	"time_latest_entry": "<time.strftime('%Y-%m-%dT%H:%M:%S+00:00', time)>",
 	"sleep_for": 60,
 	"reddit_rss": "https://www.reddit.com/user/FactorioTeam/.rss",
+	"webhook_urls": ["<url>", "<url>"]},
+"github_dash":
+	{"url": "<url>",
+	"time_latest_entry": "<time.strftime('%Y-%m-%dT%H:%M:%S+00:00', time)>",
+	"sleep_for": 180,
 	"webhook_urls": ["<url>", "<url>"]}
 }
 ```
@@ -46,4 +51,5 @@ Python 3.6.4+
 * discord.py
 * tomd
 * requests
+* beautifulsoup4
 * local clone of https://github.com/Bilka2/Wiki-scripts
