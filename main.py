@@ -1,5 +1,6 @@
 import asyncio
 import base64
+from bs4 import BeautifulSoup
 import datetime
 import discord
 import feedparser
@@ -42,12 +43,15 @@ async def update_feed(name, feed_data, feeds):
 
 async def check_feed(name, feed_data, feeds):
   feed = await loop.run_in_executor(None, feedparser.parse, feed_data['url'])
-  if get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry'] and name == 'fff':
-    await fff_updated(name, feed_data, feed, feeds)
-  elif get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry'] and name == 'wiki':
-    await wiki_updated(name, feed_data, feed, feeds)
-  elif get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry'] and name == 'forums_news':
-    await forums_news_updated(name, feed_data, feed, feeds)
+  if get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry']:
+    if name == 'fff':
+      await fff_updated(name, feed_data, feed, feeds)
+    elif name == 'wiki':
+      await wiki_updated(name, feed_data, feed, feeds)
+    elif name == 'github_dash':
+      await github_dash_updated(name, feed_data, feed, feeds)
+    elif name == 'forums_news':
+      await forums_news_updated(name, feed_data, feed, feeds)
   else:
     info_log(f'Feed "{name}" was not updated.')
 
@@ -58,7 +62,7 @@ async def fff_updated(name, feed_data, feed, feeds):
   announcement = {}
   announcement['content'] = f'@here {title}\n<{url}>'
   for url in feed_data['webhook_urls']:
-    post_data_to_webhook(url, json.dumps(announcement))
+    await post_data_to_webhook(url, json.dumps(announcement))
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
@@ -89,6 +93,53 @@ async def wiki_updated(name, feed_data, feed, feeds):
     json.dump(feeds, f)
 
 
+async def github_dash_updated(name, feed_data, feed, feeds):
+  time_latest_entry = feed_data['time_latest_entry']
+  for i, entry in enumerate(feed.entries):
+    if get_formatted_time(entry) > time_latest_entry:
+      info_log('Found new github dash event on ' + entry.updated)
+      if 'wube' not in entry.title or 'pushed' not in entry.title:
+        info_log(f'{entry.title} - Not from factorio github.')
+        continue
+      
+      embed = {}
+      embed['author'] = {}
+      embed['author']['name'] = entry.author_detail['name']
+      embed['author']['icon_url'] = entry.media_thumbnail[0]['url']
+      soup = BeautifulSoup(entry.summary, 'html.parser')
+      embed['title'] = soup.find_all('div', 'Box')[0].span.text.replace('commit', 'new commit').replace('to', 'on ') + soup.find_all('a', 'branch-name')[0].text
+      embed['url'] = entry.link
+      embed['timestamp'] = datetime.datetime(*entry.updated_parsed[0:6]).isoformat()
+      
+      out = []
+      commits = soup.find_all('div', 'commits')[0].find_all('li', 'd-flex')
+      for commit in commits:
+        comitter = commit.span.get('title')
+        link = 'https://github.com' + commit.find_all('a', 'mr-1')[0].get('href')
+        sha = commit.find_all('a', 'mr-1')[0].text
+        commit_message = commit.find_all('blockquote')[0].text.replace('\n', '').strip()
+        out.append(f'[`{sha}`]({link}) {commit_message} - {comitter}')
+      
+      if len(soup.find_all('div', 'commits')[0].find_all('li', 'mt-2')) == 1:
+        more_commits = soup.find_all('div', 'commits')[0].find_all('li', 'mt-2')[0]
+        more_commits_link = more_commits.a.get('href')
+        out.append(f'[{more_commits.a.text}](https://github.com{more_commits_link})')
+      embed['description'] = '\n'.join(out)
+      data = {}
+      embeds = []
+      embeds.append(embed)
+      data['embeds'] = embeds
+      
+      for url in feed_data['webhook_urls']:
+        await post_data_to_webhook(url, json.dumps(data))
+      await asyncio.sleep(5)
+    else:
+      break
+  feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
+  with open('feeds.json', 'w') as f:
+    json.dump(feeds, f)
+
+
 async def forums_news_updated(name, feed_data, feed, feeds):
   time_latest_entry = feed_data['time_latest_entry']
   for i, entry in enumerate(feed.entries):
@@ -111,7 +162,7 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         announcement = {}
         announcement['content'] = announcement_msg
         for url in feed_data['webhook_urls']:
-          post_data_to_webhook(url, json.dumps(announcement))
+          await post_data_to_webhook(url, json.dumps(announcement))
         wiki_msg = wiki_new_version(forum_post_number, version)
         await client.send_message(channel, wiki_msg)
     else:
@@ -134,12 +185,12 @@ async def get_version_entry_from_reddit(entry_title, reddit_url, iteration):
   await get_version_entry_from_reddit(entry_title, reddit_url, iteration+1)
 
 
-def post_data_to_webhook(webhook_url, data):
+async def post_data_to_webhook(webhook_url, data):
   result = requests.post(webhook_url, data=data, headers={'Content-Type': 'application/json'})
   try:
     result.raise_for_status()
   except requests.exceptions.HTTPError as err:
-    error_log(err)
+    error_log(str(err))
 
 
 def get_formatted_time(entry):
@@ -154,8 +205,11 @@ async def on_message(message):
   if message.content.startswith('!hello'):
     msg = f'Hello {message.author.mention}'
     await client.send_message(message.channel, msg)
+  if message.content.startswith('!stats'):
+    embed = await get_wiki_stats()
+    await client.send_message(message.channel, embed=embed)
   if message.content.startswith('!friday') and message.author.id == '204512563197640704':
-    info_log("Running friday scripts")
+    info_log('Running Friday scripts')
     msg = await run_friday_scripts()
     info_log(msg)
     info_log(str(len(msg)))
@@ -164,7 +218,7 @@ async def on_message(message):
     if '467029685914828829' not in [role.id for role in message.author.roles]:
       await client.send_message(message.channel, 'You may not run this command.')
       return
-    info_log("Running wanted pages script")
+    info_log('Running wanted pages script')
     await client.send_message(message.channel, 'Running script, please be patient')
     msg = await loop.run_in_executor(None, wiki_wanted_pages, False)
     output = '\n'.join([pretty_edit_response(line) for line in msg])
@@ -175,11 +229,28 @@ async def on_message(message):
     if '467029685914828829' not in [role.id for role in message.author.roles]:
       await client.send_message(message.channel, 'You may not run this command.')
       return
-    info_log("Running redirects script")
+    info_log('Running redirects script')
     await client.send_message(message.channel, 'Running script, please be patient')
     msg = await loop.run_in_executor(None, wiki_redirects)
     await client.send_message(message.channel, pretty_edit_response(msg))
     
+
+async def get_wiki_stats():
+  session = requests.Session()
+  session.params={
+    'format': 'json',
+    'action': 'query',
+    'meta': 'siteinfo',
+    'siprop': 'statistics'
+  }
+  info = await loop.run_in_executor(None, session.get, 'https://wiki.factorio.com/api.php')
+  info = info.json()['query']['statistics']
+  embed = discord.Embed(color = 14103594, timestamp = datetime.datetime.utcnow())
+  for name, value in info.items():
+    if name != 'activeusers' and name != 'admins':
+      embed.add_field(name = name.capitalize(), value = value)
+  return embed
+
 
 async def run_friday_scripts():
   msg = []
@@ -200,6 +271,7 @@ def pretty_edit_response(response):
   if '"nochange"' in response:
     ret += ', nochange'
   return ret
+
 
 @client.event
 async def on_ready():
