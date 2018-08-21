@@ -43,6 +43,9 @@ async def update_feed(name, feed_data, feeds):
 
 async def check_feed(name, feed_data, feeds):
   feed = await loop.run_in_executor(None, feedparser.parse, feed_data['url'])
+  if len(feed.entries) == 0:
+    error_log(f'Feed "{name}" returned empty list of feed entries.')
+    return
   if get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry']:
     if name == 'fff':
       await fff_updated(name, feed_data, feed, feeds)
