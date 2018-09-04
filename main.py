@@ -60,17 +60,13 @@ async def check_feed(name, feed_data, feeds):
 
 
 async def fff_updated(name, feed_data, feed, feeds):
-  url = feed.entries[0].link
-  title = feed.entries[0].title
-  announcement = {}
-  announcement['content'] = f'@here {title}\n<{url}>'
-  for url in feed_data['webhook_urls']:
-    await post_data_to_webhook(url, json.dumps(announcement))
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
-  msg = await run_friday_scripts()
+  
   channel = client.get_channel(feed_data['channel'])
+  await client.send_message(channel, feed.entries[0].title)
+  msg = await run_friday_scripts()
   info_log(msg)
   info_log(str(len(msg)))
   await client.send_message(channel, msg)
@@ -148,24 +144,14 @@ async def forums_news_updated(name, feed_data, feed, feeds):
   for i, entry in enumerate(feed.entries):
     if get_formatted_time(entry) > time_latest_entry:
       is_new_version = re.search('^Version (\d\.\d+\.\d+$)', entry.title)
-      if not is_new_version:
+      if not is_new_version or 'Friday Facts' in entry.title:
         continue
       else:
         version = is_new_version.group(1)
-        reddit_url = feed_data['reddit_rss']
-        reddit_entry = await get_version_entry_from_reddit(entry.title, reddit_url, 0)
         channel = client.get_channel(feed_data['channel'])
-        if not reddit_entry:
-          embed = discord.Embed(title = f'Version {version} is out but the reddit post could not be found.', color = 0xff0000, timestamp = datetime.datetime(*entry.updated_parsed[0:6]), url = entry.link)
-          await client.send_message(channel, '<@204512563197640704>', embed=embed)
-        
         forum_post_number = re.search('^https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)', entry.link).group(1)
-        announcement_msg = f'@here Version {version} released.\n<https://forums.factorio.com/{forum_post_number}>' + f'\n<{reddit_entry.link}>' if reddit_entry else ''
-        info_log(announcement_msg)
-        announcement = {}
-        announcement['content'] = announcement_msg
-        for url in feed_data['webhook_urls']:
-          await post_data_to_webhook(url, json.dumps(announcement))
+        info_log(version)
+        await client.send_message(channel, version)
         wiki_msg = wiki_new_version(forum_post_number, version)
         await client.send_message(channel, wiki_msg)
     else:
@@ -173,19 +159,6 @@ async def forums_news_updated(name, feed_data, feed, feeds):
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
-
-
-async def get_version_entry_from_reddit(entry_title, reddit_url, iteration):
-  reddit_feed = await loop.run_in_executor(None, feedparser.parse, reddit_url)
-  for i, entry in enumerate(reddit_feed.entries[:5]):
-    if entry.title == entry_title:
-      return entry
-  #couldn't find new version on reddit
-  if iteration == 8-1:
-    error_log(f'Could not find reddit post for {entry_title} within 8 * 15 seconds. Aborting.')
-    return False
-  await asyncio.sleep(15)
-  await get_version_entry_from_reddit(entry_title, reddit_url, iteration+1)
 
 
 async def post_data_to_webhook(webhook_url, data):
