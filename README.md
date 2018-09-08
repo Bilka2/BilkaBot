@@ -33,12 +33,7 @@ feeds.json:
 	{"url": "https://forums.factorio.com/feed.php?mode=news",
 	"channel": "<id>",
 	"time_latest_entry": "<time.strftime('%Y-%m-%dT%H:%M:%S+00:00', time)>",
-	"sleep_for": 60},
-"github_dash":
-	{"url": "<url>",
-	"time_latest_entry": "<time.strftime('%Y-%m-%dT%H:%M:%S+00:00', time)>",
-	"sleep_for": 180,
-	"webhook_urls": ["<url>", "<url>"]}
+	"sleep_for": 60}
 }
 ```
 

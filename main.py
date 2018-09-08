@@ -51,8 +51,6 @@ async def check_feed(name, feed_data, feeds):
       await fff_updated(name, feed_data, feed, feeds)
     elif name == 'wiki':
       await wiki_updated(name, feed_data, feed, feeds)
-    elif name == 'github_dash':
-      await github_dash_updated(name, feed_data, feed, feeds)
     elif name == 'forums_news':
       await forums_news_updated(name, feed_data, feed, feeds)
   else:
@@ -92,53 +90,6 @@ async def wiki_updated(name, feed_data, feed, feeds):
     json.dump(feeds, f)
 
 
-async def github_dash_updated(name, feed_data, feed, feeds):
-  time_latest_entry = feed_data['time_latest_entry']
-  for i, entry in enumerate(feed.entries):
-    if get_formatted_time(entry) > time_latest_entry:
-      info_log('Found new github dash event on ' + entry.updated)
-      if 'wube' not in entry.title or 'pushed' not in entry.title:
-        info_log(f'{entry.title} - Not from factorio github.')
-        continue
-      
-      embed = {}
-      embed['author'] = {}
-      embed['author']['name'] = entry.author_detail['name']
-      embed['author']['icon_url'] = entry.media_thumbnail[0]['url']
-      soup = BeautifulSoup(entry.summary, 'html.parser')
-      embed['title'] = soup.find_all('div', 'Box')[0].span.text.replace('commit', 'new commit').replace('to', 'on ') + soup.find_all('a', 'branch-name')[0].text
-      embed['url'] = entry.link
-      embed['timestamp'] = datetime.datetime(*entry.updated_parsed[0:6]).isoformat()
-      
-      out = []
-      commits = soup.find_all('div', 'commits')[0].find_all('li', 'd-flex')
-      for commit in commits:
-        comitter = commit.span.get('title')
-        link = 'https://github.com' + commit.find_all('a', 'mr-1')[0].get('href')
-        sha = commit.find_all('a', 'mr-1')[0].text
-        commit_message = commit.find_all('blockquote')[0].text.replace('\n', '').strip()
-        out.append(f'[`{sha}`]({link}) {commit_message} - {comitter}')
-      
-      if len(soup.find_all('div', 'commits')[0].find_all('li', 'mt-2')) == 1:
-        more_commits = soup.find_all('div', 'commits')[0].find_all('li', 'mt-2')[0]
-        more_commits_link = more_commits.a.get('href')
-        out.append(f'[{more_commits.a.text}](https://github.com{more_commits_link})')
-      embed['description'] = '\n'.join(out)
-      data = {}
-      embeds = []
-      embeds.append(embed)
-      data['embeds'] = embeds
-      
-      for url in feed_data['webhook_urls']:
-        await post_data_to_webhook(url, json.dumps(data))
-      await asyncio.sleep(5)
-    else:
-      break
-  feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
-  with open('feeds.json', 'w') as f:
-    json.dump(feeds, f)
-
-
 async def forums_news_updated(name, feed_data, feed, feeds):
   time_latest_entry = feed_data['time_latest_entry']
   for i, entry in enumerate(feed.entries):
@@ -159,14 +110,6 @@ async def forums_news_updated(name, feed_data, feed, feeds):
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
-
-
-async def post_data_to_webhook(webhook_url, data):
-  result = requests.post(webhook_url, data=data, headers={'Content-Type': 'application/json'})
-  try:
-    result.raise_for_status()
-  except requests.exceptions.HTTPError as err:
-    error_log(str(err))
 
 
 def get_formatted_time(entry):
