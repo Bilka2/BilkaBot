@@ -30,7 +30,7 @@ feeds.json:
 	"time_latest_entry": "<time.strftime('%Y-%m-%dT%H:%M:%S+00:00', time)>",
 	"sleep_for": 180},
 "forums_news":
-	{"url": "https://forums.factorio.com/feed.php?mode=news",
+	{"url": "https://forums.factorio.com/app.php/feed/news",
 	"channel": "<id>",
 	"time_latest_entry": "<time.strftime('%Y-%m-%dT%H:%M:%S+00:00', time)>",
 	"sleep_for": 60}
