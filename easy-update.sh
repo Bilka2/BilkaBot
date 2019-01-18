@@ -1,4 +1,4 @@
 cd ../Wiki-scripts/;
 git pull origin master;
-cd.. /BilkaBot/;
+cd ../BilkaBot/;
 bash run-bot.sh;
