@@ -104,6 +104,7 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         info_log(version)
         await client.send_message(channel, version)
         wiki_msg = wiki_new_version(forum_post_number, version)
+        wiki_msg += '\n' + wiki_new_version(forum_post_number, version, 'https://stable.wiki.factorio.com/api.php', version_nav = False)
         await client.send_message(channel, wiki_msg)
     else:
       break
@@ -175,6 +176,7 @@ async def run_friday_scripts():
   msg = []
   msg.append(await loop.run_in_executor(None, wiki_analytics))
   msg.append(await loop.run_in_executor(None, wiki_new_fff))
+  msg.append(await loop.run_in_executor(None, wiki_new_fff, 'https://stable.wiki.factorio.com/api.php'))
   msg.append(await loop.run_in_executor(None, wiki_redirects))
   msg.extend(await loop.run_in_executor(None, wiki_wanted_pages, False))
   msg = '\n'.join([pretty_edit_response(line) for line in msg])
