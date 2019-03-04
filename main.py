@@ -104,7 +104,10 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         info_log(version)
         await client.send_message(channel, version)
         wiki_msg = wiki_new_version(forum_post_number, version)
-        wiki_msg += '\n' + wiki_new_version(forum_post_number, version, 'https://stable.wiki.factorio.com/api.php', version_nav = False)
+        try:
+          wiki_msg += '\n' + wiki_new_version(forum_post_number, version, 'https://stable.wiki.factorio.com/api.php', version_nav = False)
+        except:
+          pass
         await client.send_message(channel, wiki_msg)
     else:
       break
