@@ -1,0 +1,14 @@
+[Unit]
+Description=Bilkas Discord and Wiki bot
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+User=bilka
+WorkingDirectory=/home/bilka/
+ExecStart=/usr/bin/env bash start.sh
+
+[Install]
+WantedBy=multi-user.target
