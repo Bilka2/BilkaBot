@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-systemctl stop BilkaBot;
+sudo systemctl stop BilkaBot;
 cd ~/Wiki-scripts/;
 git pull origin master;
 cd ~/BilkaBot/;
 git pull origin master;
 cd ~;
-systemctl start BilkaBot
+sudo systemctl start BilkaBot
