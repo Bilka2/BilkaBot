@@ -62,8 +62,15 @@ async def fff_updated(name, feed_data, feed, feeds):
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
   
+  entry = feed.entries[0] 
+  
   channel = client.get_channel(feed_data['channel'])
-  await client.send_message(channel, feed.entries[0].title)
+  await client.send_message(channel, entry.title)
+  
+  announcement = {}
+  announcement['content'] = f'@here {entry.title}\n{entry.link}'
+  for url in feed_data['webhook_urls']:
+    await post_data_to_webhook(url, json.dumps(announcement))
   msg = await run_friday_scripts()
   info_log(msg)
   info_log(str(len(msg)))
