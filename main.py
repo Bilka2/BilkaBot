@@ -115,6 +115,8 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         
         forum_post_number = re.search('^https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)', entry.link).group(1)
         announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>' + f'\n<{reddit_entry.link}>' if reddit_entry else ''
+        if version.endswith('.0'):
+          announcement_msg = '@everyone ' + announcement_msg
         info_log(announcement_msg)
         announcement = {}
         announcement['content'] = announcement_msg
