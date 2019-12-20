@@ -37,6 +37,12 @@ feeds.json:
 	"sleep_for": 60,
 	"reddit_rss": "https://www.reddit.com/user/FactorioTeam/.rss",
 	"webhook_urls": ["<url>", "<url>"]}
+},
+"subreddit":
+	{"url": "https://www.reddit.com/r/technicalfactorio/new.rss",
+	"channel": "<id>",
+	"time_latest_entry": "<time.strftime('%Y-%m-%dT%H:%M:%S+00:00', time)>",
+	"sleep_for": 180}
 }
 ```
 
