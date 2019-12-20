@@ -204,19 +204,19 @@ async def on_message(message):
   if message.author.bot:
     return
   
-  if message.content.startswith('!hello'):
+  if message.content.startswith('.ping'):
     msg = f'Hello {message.author.mention}'
     await client.send_message(message.channel, msg)
-  if message.content.startswith('!stats'):
+  elif message.content.startswith('.wiki_status'):
     embed = await get_wiki_stats()
     await client.send_message(message.channel, embed=embed)
-  if message.content.startswith('!friday') and message.author.id == '204512563197640704':
+  elif message.content.startswith('.friday') and message.author.id == '204512563197640704':
     info_log('Running Friday scripts')
     msg = await run_friday_scripts()
     info_log(msg)
     info_log(str(len(msg)))
     await client.send_message(message.channel, msg)
-  if message.content.startswith('!wanted_pages'):
+  elif message.content.startswith('.wanted_pages'):
     if '467029685914828829' not in [role.id for role in message.author.roles]:
       await client.send_message(message.channel, 'You may not run this command.')
       return
@@ -227,7 +227,7 @@ async def on_message(message):
     info_log(output)
     info_log(str(len(output)))
     await client.send_message(message.channel, output)
-  if message.content.startswith('!redirects'):
+  elif message.content.startswith('.redirects'):
     if '467029685914828829' not in [role.id for role in message.author.roles]:
       await client.send_message(message.channel, 'You may not run this command.')
       return
@@ -235,6 +235,13 @@ async def on_message(message):
     await client.send_message(message.channel, 'Running script, please be patient')
     msg = await loop.run_in_executor(None, wiki_redirects)
     await client.send_message(message.channel, pretty_edit_response(msg))
+  elif message.content.startswith('.help') or message.content.startswith('.info'):
+    msg = 'Hello, I am Bilka\'s bot. Commands:\n`.help` or `.info` - Prints this message\n`.ping` - Pings this bot\n`.wiki_status` - Prints the current status of wiki.factorio.com'
+    if message.server and '467029685914828829' in [role.id for role in message.server.roles]:
+      msg += '\nCommands for trusted wiki editors only:'
+      msg += '\n`.wanted_pages` - Runs the wanted pages script on wiki.factorio.com\n`.redirects` - Runs the redirects script on wiki.factorio.com'
+    msg+='\nSource code: <https://github.com/Bilka2/BilkaBot>'
+    await client.send_message(message.channel, msg)
     
 
 async def get_wiki_stats():
