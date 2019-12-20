@@ -25,7 +25,7 @@ from new_version import main as wiki_new_version
 from redirects import main as wiki_redirects
 from wanted_pages import main as wiki_wanted_pages
 
-logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt= "%Y-%m-%d %H:%M:%S", level=logging.INFO, filename='log.log')
+logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt= "%Y-%m-%d %H:%M:%S", level=logging.WARNING, filename='log.log')
 TOKEN = base64.b64decode(config['token']).decode('utf-8')
 client = discord.Client()
 with open('feeds.json', 'r') as f:
