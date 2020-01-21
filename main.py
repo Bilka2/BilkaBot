@@ -153,19 +153,19 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         
         forum_post_number = re.search('^https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)', entry.link).group(1)
         announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>' + f'\n<{reddit_entry.link}>' if reddit_entry else ''
-        if version.endswith('.0'):
-          announcement_msg = '@everyone ' + announcement_msg
+        # if version.endswith('.0'):
+        #  announcement_msg = '@everyone ' + announcement_msg
         info_log(announcement_msg)
         announcement = {}
         announcement['content'] = announcement_msg
         await client.send_message(channel, version)
-        for url in feed_data['webhook_urls']:
-          await post_data_to_webhook(url, json.dumps(announcement))
+        # for url in feed_data['webhook_urls']:
+        #  await post_data_to_webhook(url, json.dumps(announcement))
         wiki_msg = wiki_new_version(forum_post_number, version)
-        try:
-          wiki_msg += '\n' + wiki_new_version(forum_post_number, version, 'https://stable.wiki.factorio.com/api.php', version_nav = False)
-        except:
-          pass
+        # try:
+        #  wiki_msg += '\n' + wiki_new_version(forum_post_number, version, 'https://stable.wiki.factorio.com/api.php', version_nav = False)
+        # except:
+        #  pass
         await client.send_message(channel, wiki_msg)
     else:
       break
