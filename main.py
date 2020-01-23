@@ -159,13 +159,9 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         announcement = {}
         announcement['content'] = announcement_msg
         await client.send_message(channel, version)
-        # for url in feed_data['webhook_urls']:
-        #  await post_data_to_webhook(url, json.dumps(announcement))
+        for url in feed_data['webhook_urls']:
+          await post_data_to_webhook(url, json.dumps(announcement))
         wiki_msg = wiki_new_version(forum_post_number, version)
-        # try:
-        #  wiki_msg += '\n' + wiki_new_version(forum_post_number, version, 'https://stable.wiki.factorio.com/api.php', version_nav = False)
-        # except:
-        #  pass
         await client.send_message(channel, wiki_msg)
     else:
       break
