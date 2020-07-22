@@ -27,6 +27,7 @@ from wanted_pages import main as wiki_wanted_pages
 
 logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt= "%Y-%m-%d %H:%M:%S", level=logging.WARNING, filename='log.log')
 TOKEN = base64.b64decode(config['token']).decode('utf-8')
+WIKI_EDITOR_ROLE_ID = 467029685914828829
 client = discord.Client()
 with open('feeds.json', 'r') as f:
   feeds = json.load(f)
@@ -34,7 +35,7 @@ with open('feeds.json', 'r') as f:
 
 async def update_feed(name, feed_data, feeds):
   await client.wait_until_ready()
-  while not client.is_closed:
+  while not client.is_closed():
     try:
       await check_feed(name, feed_data, feeds)
     except:
@@ -87,7 +88,7 @@ async def subreddit_updated(name, feed_data, feed, feeds):
       
       embed.set_author(name=entry.author, url=entry.author_detail.href)
       channel = client.get_channel(feed_data['channel'])
-      await client.send_message(channel, embed=embed)
+      await channel.send(embed=embed)
     else:
       break
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
@@ -103,7 +104,7 @@ async def fff_updated(name, feed_data, feed, feeds):
   entry = feed.entries[0] 
   
   channel = client.get_channel(feed_data['channel'])
-  await client.send_message(channel, entry.title)
+  await channel.send(entry.title)
   
   announcement = {}
   announcement['content'] = f'@here {entry.title}\n{entry.link}'
@@ -112,7 +113,7 @@ async def fff_updated(name, feed_data, feed, feeds):
   msg = await run_friday_scripts()
   info_log(msg)
   info_log(str(len(msg)))
-  await client.send_message(channel, msg)
+  await channel.send(msg)
 
 
 async def wiki_updated(name, feed_data, feed, feeds):
@@ -127,7 +128,7 @@ async def wiki_updated(name, feed_data, feed, feeds):
         summary = re.sub('<bdi>|<\/bdi>', '', summary)
       embed = discord.Embed(title = f'{entry.author} changed {entry.title}', color = 14103594, timestamp = datetime.datetime(*entry.updated_parsed[0:6]), url = entry.link, description = summary)
       channel = client.get_channel(feed_data['channel'])
-      await client.send_message(channel, embed=embed)
+      await channel.send(embed=embed)
     else:
       break
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
@@ -149,7 +150,7 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         channel = client.get_channel(feed_data['channel'])
         if not reddit_entry:
           embed = discord.Embed(title = f'Version {version} is out but the reddit post could not be found.', color = 0xff0000, timestamp = datetime.datetime(*entry.updated_parsed[0:6]), url = entry.link)
-          await client.send_message(channel, '<@204512563197640704>', embed=embed)
+          await channel.send('<@204512563197640704>', embed=embed)
         
         forum_post_number = re.search('^https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)', entry.link).group(1)
         announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>' + f'\n<{reddit_entry.link}>' if reddit_entry else ''
@@ -158,11 +159,11 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         info_log(announcement_msg)
         announcement = {}
         announcement['content'] = announcement_msg
-        await client.send_message(channel, version)
+        await channel.send(version)
         for url in feed_data['webhook_urls']:
           await post_data_to_webhook(url, json.dumps(announcement))
         wiki_msg = wiki_new_version(forum_post_number, version)
-        await client.send_message(channel, wiki_msg)
+        await channel.send(wiki_msg)
     else:
       break
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
@@ -202,42 +203,42 @@ async def on_message(message):
   
   if message.content.startswith('.ping'):
     msg = f'Hello {message.author.mention}'
-    await client.send_message(message.channel, msg)
+    await message.channel.send(msg)
   elif message.content.startswith('.wiki_status'):
     embed = await get_wiki_stats()
-    await client.send_message(message.channel, embed=embed)
-  elif message.content.startswith('.friday') and message.author.id == '204512563197640704':
+    await message.channel.send(embed=embed)
+  elif message.content.startswith('.friday') and message.author.id == 204512563197640704:
     info_log('Running Friday scripts')
     msg = await run_friday_scripts()
     info_log(msg)
     info_log(str(len(msg)))
-    await client.send_message(message.channel, msg)
+    await message.channel.send(msg)
   elif message.content.startswith('.wanted_pages'):
-    if '467029685914828829' not in [role.id for role in message.author.roles]:
-      await client.send_message(message.channel, 'You may not run this command.')
+    if WIKI_EDITOR_ROLE_ID not in [role.id for role in message.author.roles]:
+      await message.channel.send('You may not run this command.')
       return
     info_log('Running wanted pages script')
-    await client.send_message(message.channel, 'Running script, please be patient')
+    await message.channel.send('Running script, please be patient')
     msg = await loop.run_in_executor(None, wiki_wanted_pages, False)
     output = '\n'.join([pretty_edit_response(line) for line in msg])
     info_log(output)
     info_log(str(len(output)))
-    await client.send_message(message.channel, output)
+    await message.channel.send(output)
   elif message.content.startswith('.redirects'):
-    if '467029685914828829' not in [role.id for role in message.author.roles]:
-      await client.send_message(message.channel, 'You may not run this command.')
+    if WIKI_EDITOR_ROLE_ID not in [role.id for role in message.author.roles]:
+      await message.channel.send('You may not run this command.')
       return
     info_log('Running redirects script')
-    await client.send_message(message.channel, 'Running script, please be patient')
+    await message.channel.send('Running script, please be patient')
     msg = await loop.run_in_executor(None, wiki_redirects)
-    await client.send_message(message.channel, pretty_edit_response(msg))
+    await message.channel.send(pretty_edit_response(msg))
   elif message.content.startswith('.help') or message.content.startswith('.info'):
     msg = 'Hello, I am Bilka\'s bot. Commands:\n`.help` or `.info` - Prints this message\n`.ping` - Pings this bot\n`.wiki_status` - Prints the current status of wiki.factorio.com'
-    if message.server and '467029685914828829' in [role.id for role in message.server.roles]:
+    if message.guild and WIKI_EDITOR_ROLE_ID in [role.id for role in message.guild.roles]:
       msg += '\nCommands for trusted wiki editors only:'
       msg += '\n`.wanted_pages` - Runs the wanted pages script on wiki.factorio.com\n`.redirects` - Runs the redirects script on wiki.factorio.com'
     msg+='\nSource code: <https://github.com/Bilka2/BilkaBot>'
-    await client.send_message(message.channel, msg)
+    await message.channel.send(msg)
     
 
 async def get_wiki_stats():
