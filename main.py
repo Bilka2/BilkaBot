@@ -50,11 +50,11 @@ async def check_feed(name, feed_data, feeds):
     return
   if get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry']:
     if name == 'fff':
-      await fff_updated(name, feed_data, feed, feeds)
+      pass
     elif name == 'wiki':
       await wiki_updated(name, feed_data, feed, feeds)
     elif name == 'forums_news':
-      await forums_news_updated(name, feed_data, feed, feeds)
+      pass
     elif name == 'subreddit':
       await subreddit_updated(name, feed_data, feed, feeds)
   else:
@@ -154,8 +154,7 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         
         forum_post_number = re.search('^https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)', entry.link).group(1)
         announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>' + f'\n<{reddit_entry.link}>' if reddit_entry else ''
-        # if version.endswith('.0'):
-        #  announcement_msg = '@everyone ' + announcement_msg
+        
         info_log(announcement_msg)
         announcement = {}
         announcement['content'] = announcement_msg
