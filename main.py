@@ -50,11 +50,11 @@ async def check_feed(name, feed_data, feeds):
     return
   if get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry']:
     if name == 'fff':
-      pass
+      await fff_updated(name, feed_data, feed, feeds)
     elif name == 'wiki':
       await wiki_updated(name, feed_data, feed, feeds)
     elif name == 'forums_news':
-      pass
+      await forums_news_updated(name, feed_data, feed, feeds)
     elif name == 'subreddit':
       await subreddit_updated(name, feed_data, feed, feeds)
   else:
@@ -108,8 +108,8 @@ async def fff_updated(name, feed_data, feed, feeds):
   
   announcement = {}
   announcement['content'] = f'@here {entry.title}\n{entry.link}'
-  for url in feed_data['webhook_urls']:
-    await post_data_to_webhook(url, json.dumps(announcement))
+  # for url in feed_data['webhook_urls']:
+  #   await post_data_to_webhook(url, json.dumps(announcement))
   msg = await run_friday_scripts()
   info_log(msg)
   info_log(str(len(msg)))
@@ -159,8 +159,8 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         announcement = {}
         announcement['content'] = announcement_msg
         await channel.send(version)
-        for url in feed_data['webhook_urls']:
-          await post_data_to_webhook(url, json.dumps(announcement))
+        #for url in feed_data['webhook_urls']:
+        #  await post_data_to_webhook(url, json.dumps(announcement))
         wiki_msg = wiki_new_version(forum_post_number, version)
         await channel.send(wiki_msg)
     else:
