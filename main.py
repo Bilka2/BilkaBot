@@ -101,15 +101,15 @@ async def fff_updated(name, feed_data, feed, feeds):
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
   
-  entry = feed.entries[0] 
+  entry = feed.entries[0]
   
   channel = client.get_channel(feed_data['channel'])
   await channel.send(entry.title)
   
   announcement = {}
   announcement['content'] = f'@here {entry.title}\n{entry.link}'
-  # for url in feed_data['webhook_urls']:
-  #   await post_data_to_webhook(url, json.dumps(announcement))
+  for url in feed_data['webhook_urls']:
+    await post_data_to_webhook(url, json.dumps(announcement))
   msg = await run_friday_scripts()
   info_log(msg)
   info_log(str(len(msg)))
@@ -159,8 +159,8 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         announcement = {}
         announcement['content'] = announcement_msg
         await channel.send(version)
-        #for url in feed_data['webhook_urls']:
-        #  await post_data_to_webhook(url, json.dumps(announcement))
+        for url in feed_data['webhook_urls']:
+          await post_data_to_webhook(url, json.dumps(announcement))
         wiki_msg = wiki_new_version(forum_post_number, version)
         await channel.send(wiki_msg)
     else:
@@ -261,10 +261,6 @@ async def run_friday_scripts():
   msg = []
   msg.append(await loop.run_in_executor(None, wiki_analytics))
   msg.append(await loop.run_in_executor(None, wiki_new_fff))
-  try:
-    msg.append(await loop.run_in_executor(None, wiki_new_fff, 'https://stable.wiki.factorio.com/api.php'))
-  except:
-    pass
   msg.append(await loop.run_in_executor(None, wiki_redirects))
   msg.extend(await loop.run_in_executor(None, wiki_wanted_pages, False))
   msg = '\n'.join([pretty_edit_response(line) for line in msg])
