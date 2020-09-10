@@ -51,6 +51,8 @@ async def check_feed(name, feed_data, feeds):
   if get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry']:
     if name == 'fff':
       await fff_updated(name, feed_data, feed, feeds)
+    elif name == 'alt-f4':
+      await community_fff_updated(name, feed_data, feed, feeds)
     elif name == 'wiki':
       await wiki_updated(name, feed_data, feed, feeds)
     elif name == 'forums_news':
@@ -114,6 +116,22 @@ async def fff_updated(name, feed_data, feed, feeds):
   info_log(msg)
   info_log(str(len(msg)))
   await channel.send(msg)
+
+
+async def community_fff_updated(name, feed_data, feed, feeds):
+  feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
+  with open('feeds.json', 'w') as f:
+    json.dump(feeds, f)
+  
+  entry = feed.entries[0]
+  
+  channel = client.get_channel(feed_data['channel'])
+  await channel.send(entry.title)
+  
+  announcement = {}
+  announcement['content'] = f'{entry.title}\n<{entry.link}>'
+  for url in feed_data['webhook_urls']:
+    await post_data_to_webhook(url, json.dumps(announcement))
 
 
 async def wiki_updated(name, feed_data, feed, feeds):
