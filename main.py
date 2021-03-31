@@ -174,6 +174,10 @@ async def on_message(message):
     info_log(msg)
     info_log(str(len(msg)))
     await message.channel.send(msg)
+  elif message.content.startswith('.leave') and message.author.id == 204512563197640704:
+    if message.guild:
+      await message.channel.send('Bye.')
+      await message.guild.leave()
   elif message.content.startswith('.wanted_pages'):
     if WIKI_EDITOR_ROLE_ID not in [role.id for role in message.author.roles]:
       await message.channel.send('You may not run this command.')
