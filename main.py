@@ -10,7 +10,6 @@ import logging
 import re
 import requests
 import sys
-import textwrap
 import time
 import tomd
 import traceback
@@ -55,45 +54,8 @@ async def check_feed(name, feed_data, feeds):
       await wiki_updated(name, feed_data, feed, feeds)
     elif name == 'forums_news':
       await forums_news_updated(name, feed_data, feed, feeds)
-    elif name == 'subreddit':
-      await subreddit_updated(name, feed_data, feed, feeds)
   else:
     info_log(f'Feed "{name}" was not updated.')
-
-
-async def subreddit_updated(name, feed_data, feed, feeds):
-  time_latest_entry = feed_data['time_latest_entry']
-  for i, entry in enumerate(feed.entries):
-    if get_formatted_time(entry) > time_latest_entry:
-      summary = ''
-      if re.search('<p.*?>.*?<\/p>', entry.content[0].value):
-        summary = html.unescape(tomd.convert(re.search('<p.*?>.*?<\/p>', entry.summary).group()))
-        if entry.content[0].value.count('</p>') > 1:
-          summary += '\n[...]'
-      elif '<!-- SC_OFF -->' in entry.content[0].value:
-        summary = html.unescape(tomd.convert(re.search('<!-- SC_OFF -->(.+)<!-- SC_ON -->', entry.content[0].value).group(1)))
-        
-      title = entry.title
-      if len(entry.title) >= 250:
-        title = textwrap.wrap(entry.title, 250)[0] + ' ...'
-      
-      embed = discord.Embed(title = title, color = 14103594, timestamp = datetime.datetime(*entry.updated_parsed[0:6]), url = entry.link, description = summary)
-      
-      link_after_user = re.search('/u/\S+ </a> <br/> <span><a href="(\S+)"', entry.content[0].value)
-
-      if link_after_user and link_after_user.group(1) != entry.link and re.search('\.(jpg|png)$', link_after_user.group(1)):
-        embed.set_image(url=link_after_user.group(1))
-      elif 'img src="' in entry.content[0].value and re.search('img src="(\S+)"', entry.content[0].value):
-        embed.set_thumbnail(url=(re.search('img src="(\S+)"', entry.content[0].value).group(1)))
-      
-      embed.set_author(name=entry.author, url=entry.author_detail.href)
-      channel = client.get_channel(feed_data['channel'])
-      await channel.send(embed=embed)
-    else:
-      break
-  feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
-  with open('feeds.json', 'w') as f:
-    json.dump(feeds, f)
   
 
 async def fff_updated(name, feed_data, feed, feeds):
