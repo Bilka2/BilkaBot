@@ -71,7 +71,7 @@ async def fff_updated(name, feed_data, feed, feeds):
   announcement = {}
   announcement['content'] = f'@here {entry.title}\n{entry.link}'
   for url in feed_data['webhook_urls']:
-    await post_data_to_webhook(url, json.dumps(announcement))
+    await post_data_to_webhook(url, announcement)
   msg = await run_friday_scripts()
   info_log(msg)
   info_log(str(len(msg)))
@@ -122,7 +122,7 @@ async def forums_news_updated(name, feed_data, feed, feeds):
         announcement['content'] = announcement_msg
         await channel.send(version)
         for url in feed_data['webhook_urls']:
-          await post_data_to_webhook(url, json.dumps(announcement))
+          await post_data_to_webhook(url, announcement)
         wiki_msg = wiki_new_version(forum_post_number, version)
         await channel.send(wiki_msg)
     else:
@@ -146,7 +146,7 @@ async def get_version_entry_from_reddit(entry_title, reddit_url, iteration):
 
 
 async def post_data_to_webhook(webhook_url, data):
-  result = requests.post(webhook_url, data=data, headers={'Content-Type': 'application/json'})
+  result = requests.post(webhook_url, json = data)
   try:
     result.raise_for_status()
   except requests.exceptions.HTTPError as err:
