@@ -3,6 +3,7 @@ import base64
 from bs4 import BeautifulSoup
 import datetime
 import discord
+from discord import app_commands
 import feedparser
 import html
 import json
@@ -27,13 +28,18 @@ from wanted_pages import main as wiki_wanted_pages
 logging.basicConfig(format="%(asctime)s %(levelname)-8s %(message)s", datefmt= "%Y-%m-%d %H:%M:%S", level=logging.WARNING, filename='log.log')
 TOKEN = base64.b64decode(config['token']).decode('utf-8')
 WIKI_EDITOR_ROLE_ID = 467029685914828829
-client = discord.Client()
+BILKAS_DEV_ADVENTURES_GUILD_ID = 439330623858016257
+
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
+command_tree = app_commands.CommandTree(client)
+
 with open('feeds.json', 'r') as f:
   feeds = json.load(f)
 
 
-async def update_feed(name, feed_data, feeds):
-  await client.wait_until_ready()
+async def update_feed(name: str, feed_data, feeds):
   while not client.is_closed():
     try:
       await check_feed(name, feed_data, feeds)
@@ -42,7 +48,7 @@ async def update_feed(name, feed_data, feeds):
     await asyncio.sleep(feed_data['sleep_for'])
 
 
-async def check_feed(name, feed_data, feeds):
+async def check_feed(name: str, feed_data, feeds):
   feed = await loop.run_in_executor(None, feedparser.parse, feed_data['url'])
   if len(feed.entries) == 0:
     error_log(f'Feed "{name}" returned empty list of feed entries.')
@@ -58,7 +64,7 @@ async def check_feed(name, feed_data, feeds):
     info_log(f'Feed "{name}" was not updated.')
   
 
-async def fff_updated(name, feed_data, feed, feeds):
+async def fff_updated(name: str, feed_data, feed, feeds):
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
@@ -78,7 +84,7 @@ async def fff_updated(name, feed_data, feed, feeds):
   await channel.send(msg)
 
 
-async def wiki_updated(name, feed_data, feed, feeds):
+async def wiki_updated(name: str, feed_data, feed, feeds):
   time_latest_entry = feed_data['time_latest_entry']
   for i, entry in enumerate(feed.entries):
     if get_formatted_time(entry) > time_latest_entry:
@@ -98,7 +104,7 @@ async def wiki_updated(name, feed_data, feed, feeds):
     json.dump(feeds, f)
 
 
-async def forums_news_updated(name, feed_data, feed, feeds):
+async def forums_news_updated(name: str, feed_data, feed, feeds):
   time_latest_entry = feed_data['time_latest_entry']
   for i, entry in enumerate(feed.entries):
     if get_formatted_time(entry) > time_latest_entry:
@@ -156,18 +162,42 @@ async def post_data_to_webhook(webhook_url, data):
 def get_formatted_time(entry):
   return time.strftime('%Y-%m-%dT%H:%M:%S+00:00', entry.updated_parsed)
 
+@command_tree.command(guild=discord.Object(id=BILKAS_DEV_ADVENTURES_GUILD_ID))
+async def ping(interaction: discord.Interaction):
+  await interaction.response.send_message(f'Hello {interaction.user.mention}', ephemeral=True)
+    
+@command_tree.command(guild=discord.Object(id=BILKAS_DEV_ADVENTURES_GUILD_ID))
+async def wiki_status(interaction: discord.Interaction):
+  await interaction.response.defer(thinking=True)
+  embed = await get_wiki_stats()
+  await interaction.followup.send(embed=embed)
+
+@command_tree.command(guild=discord.Object(id=BILKAS_DEV_ADVENTURES_GUILD_ID))
+async def wanted_pages(interaction: discord.Interaction):
+  await interaction.response.defer(thinking=True)
+  
+  if WIKI_EDITOR_ROLE_ID not in [role.id for role in interaction.user.roles]:
+    await interaction.followup.send('You may not run this command.')
+    return
+  info_log('Running wanted pages script')
+  try:
+    msg = await loop.run_in_executor(None, wiki_wanted_pages, False)
+  except:
+    error_log(traceback.format_exc())
+  output = '\n'.join([pretty_edit_response(line) for line in msg])
+  info_log(output)
+  info_log(str(len(output)))
+  await interaction.followup.send(output)
+
 
 @client.event
 async def on_message(message):
   if message.author.bot:
     return
   
-  if message.content.startswith('.ping'):
-    msg = f'Hello {message.author.mention}'
-    await message.channel.send(msg)
-  elif message.content.startswith('.wiki_status'):
-    embed = await get_wiki_stats()
-    await message.channel.send(embed=embed)
+  if message.content.startswith('.sync'):
+    await command_tree.sync(guild=message.guild)
+    await message.channel.send('Synced commands for this guild')
   elif message.content.startswith('.friday') and message.author.id == 204512563197640704:
     info_log('Running Friday scripts')
     msg = await run_friday_scripts()
@@ -178,17 +208,6 @@ async def on_message(message):
     if message.guild:
       await message.channel.send('Bye.')
       await message.guild.leave()
-  elif message.content.startswith('.wanted_pages'):
-    if WIKI_EDITOR_ROLE_ID not in [role.id for role in message.author.roles]:
-      await message.channel.send('You may not run this command.')
-      return
-    info_log('Running wanted pages script')
-    await message.channel.send('Running script, please be patient')
-    msg = await loop.run_in_executor(None, wiki_wanted_pages, False)
-    output = '\n'.join([pretty_edit_response(line) for line in msg])
-    info_log(output)
-    info_log(str(len(output)))
-    await message.channel.send(output)
   elif message.content.startswith('.redirects'):
     if WIKI_EDITOR_ROLE_ID not in [role.id for role in message.author.roles]:
       await message.channel.send('You may not run this command.')
@@ -249,9 +268,13 @@ async def on_ready():
   info_log('Logged in as')
   info_log(client.user.name)
   info_log('------')
+  info_log('Setting up event loop for feed checking')
+  for name, feed_data in feeds.items():
+    task = loop.create_task(update_feed(name, feed_data, feeds))
+    tasks.append(task)
 
 
-def error_log(msg):
+def error_log(msg: str):
   print(time.asctime() + ' ' + msg)
   try:
     logging.error(msg)
@@ -259,26 +282,23 @@ def error_log(msg):
     print(time.asctime() + ' Error logging failed.')
 
 
-def info_log(msg):
+def info_log(msg: str):
   print(time.asctime() + ' ' + msg)
   logging.info(msg)
 
 
-def debug_print(msg):
+def debug_print(msg: str):
   print(time.asctime() + ' ' + msg)
 
-
+# these are both also used in on_ready
 loop = asyncio.get_event_loop()
+tasks = []
 try:
-  tasks = []
-  for name, feed_data in feeds.items():
-    task = loop.create_task(update_feed(name, feed_data, feeds))
-    tasks.append(task)
   loop.run_until_complete(client.start(TOKEN))
 except KeyboardInterrupt:
   info_log('Received KeyboardInterrupt, logging out')
   for task in tasks:
     task.cancel()
-  loop.run_until_complete(client.logout())
+  loop.run_until_complete(client.close())
 finally:
   loop.close()
