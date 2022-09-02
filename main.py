@@ -162,23 +162,42 @@ async def post_data_to_webhook(webhook_url, data):
 def get_formatted_time(entry):
   return time.strftime('%Y-%m-%dT%H:%M:%S+00:00', entry.updated_parsed)
 
-@command_tree.command(guild=discord.Object(id=BILKAS_DEV_ADVENTURES_GUILD_ID))
+
+@command_tree.command(guild=discord.Object(id=BILKAS_DEV_ADVENTURES_GUILD_ID), description='Pings this bot')
 async def ping(interaction: discord.Interaction):
   await interaction.response.send_message(f'Hello {interaction.user.mention}', ephemeral=True)
-    
-@command_tree.command(guild=discord.Object(id=BILKAS_DEV_ADVENTURES_GUILD_ID))
+
+  
+@command_tree.command(guild=discord.Object(id=BILKAS_DEV_ADVENTURES_GUILD_ID), description='Prints the current status of wiki.factorio.com')
 async def wiki_status(interaction: discord.Interaction):
   await interaction.response.defer(thinking=True)
   embed = await get_wiki_stats()
   await interaction.followup.send(embed=embed)
 
+
 @command_tree.command(guild=discord.Object(id=BILKAS_DEV_ADVENTURES_GUILD_ID))
+async def friday(interaction: discord.Interaction):
+  await interaction.response.defer(thinking=True)
+  
+  if interaction.user.id != 204512563197640704:
+    await interaction.followup.send('You may not run this command.')
+    return
+  
+  info_log('Running Friday scripts')
+  msg = await run_friday_scripts()
+  info_log(msg)
+  info_log(str(len(msg)))
+  await interaction.followup.send(msg)
+
+
+@command_tree.command(guild=discord.Object(id=BILKAS_DEV_ADVENTURES_GUILD_ID), description='Runs the wanted pages script on wiki.factorio.com')
 async def wanted_pages(interaction: discord.Interaction):
   await interaction.response.defer(thinking=True)
   
   if WIKI_EDITOR_ROLE_ID not in [role.id for role in interaction.user.roles]:
     await interaction.followup.send('You may not run this command.')
     return
+  
   info_log('Running wanted pages script')
   try:
     msg = await loop.run_in_executor(None, wiki_wanted_pages, False)
@@ -190,6 +209,19 @@ async def wanted_pages(interaction: discord.Interaction):
   await interaction.followup.send(output)
 
 
+@command_tree.command(guild=discord.Object(id=BILKAS_DEV_ADVENTURES_GUILD_ID), description='Runs the redirects script on wiki.factorio.com')
+async def redirects(interaction: discord.Interaction):
+  await interaction.response.defer(thinking=True)
+  
+  if WIKI_EDITOR_ROLE_ID not in [role.id for role in interaction.user.roles]:
+    await interaction.followup.send('You may not run this command.')
+    return
+  
+  info_log('Running redirects script')
+  msg = await loop.run_in_executor(None, wiki_redirects)
+  await interaction.followup.send(pretty_edit_response(msg))
+
+
 @client.event
 async def on_message(message):
   if message.author.bot:
@@ -198,29 +230,15 @@ async def on_message(message):
   if message.content.startswith('.sync'):
     await command_tree.sync(guild=message.guild)
     await message.channel.send('Synced commands for this guild')
-  elif message.content.startswith('.friday') and message.author.id == 204512563197640704:
-    info_log('Running Friday scripts')
-    msg = await run_friday_scripts()
-    info_log(msg)
-    info_log(str(len(msg)))
-    await message.channel.send(msg)
   elif message.content.startswith('.leave') and message.author.id == 204512563197640704:
     if message.guild:
       await message.channel.send('Bye.')
       await message.guild.leave()
-  elif message.content.startswith('.redirects'):
-    if WIKI_EDITOR_ROLE_ID not in [role.id for role in message.author.roles]:
-      await message.channel.send('You may not run this command.')
-      return
-    info_log('Running redirects script')
-    await message.channel.send('Running script, please be patient')
-    msg = await loop.run_in_executor(None, wiki_redirects)
-    await message.channel.send(pretty_edit_response(msg))
   elif message.content.startswith('.help') or message.content.startswith('.info'):
-    msg = 'Hello, I am Bilka\'s bot. Commands:\n`.help` or `.info` - Prints this message\n`.ping` - Pings this bot\n`.wiki_status` - Prints the current status of wiki.factorio.com'
+    msg = 'Hello, I am Bilka\'s bot. Commands:\n`.help` or `.info` - Prints this message\n`.sync` - Sync the slash commands for this guild\n`/ping` - Pings this bot\n`/wiki_status` - Prints the current status of wiki.factorio.com'
     if message.guild and WIKI_EDITOR_ROLE_ID in [role.id for role in message.guild.roles]:
       msg += '\nCommands for trusted wiki editors only:'
-      msg += '\n`.wanted_pages` - Runs the wanted pages script on wiki.factorio.com\n`.redirects` - Runs the redirects script on wiki.factorio.com'
+      msg += '\n`/wanted_pages` - Runs the wanted pages script on wiki.factorio.com\n`/redirects` - Runs the redirects script on wiki.factorio.com'
     msg+='\nSource code: <https://github.com/Bilka2/BilkaBot>'
     await message.channel.send(msg)
     
