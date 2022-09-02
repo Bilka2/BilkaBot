@@ -8,7 +8,7 @@ Restart=always
 RestartSec=3
 User=bilka
 WorkingDirectory=/home/bilka/
-ExecStart=/usr/bin/env bash start.sh
+ExecStart=/usr/bin/env bash BilkaBot/start.sh
 
 [Install]
 WantedBy=multi-user.target
