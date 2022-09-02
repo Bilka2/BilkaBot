@@ -41,10 +41,19 @@ feeds.json:
 ```
 
 Dependencies:
-Python 3.6.4+
+Python 3.8+
 * feedparser
-* discord.py
+* discord.py 2.0+
 * tomd
 * requests
 * beautifulsoup4
 * local clone of https://github.com/Bilka2/Wiki-scripts
+
+Virtualenv setup:
+#pwd should be ~
+virtualenv wiki_bot_env
+source wiki_bot_env/bin/activate
+python3 --version # needs to be 3.8 or higher
+python3 -m pip install -r /BilkaBot/dependencies.txt
+deactivate
+# start bot with easy_update.sh
