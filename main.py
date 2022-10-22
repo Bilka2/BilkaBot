@@ -76,8 +76,8 @@ async def fff_updated(name: str, feed_data, feed, feeds):
   
   announcement = {}
   announcement['content'] = f'{entry.title}\n{entry.link}'
-  for url in feed_data['webhook_urls']:
-    await post_data_to_webhook(url, announcement)
+  #for url in feed_data['webhook_urls']:
+  #  await post_data_to_webhook(url, announcement)
   msg = await run_friday_scripts()
   info_log(msg)
   info_log(str(len(msg)))
