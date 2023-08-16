@@ -52,10 +52,10 @@ Python 3.8+
 Virtualenv setup:
 ```
 #pwd should be ~
-virtualenv wiki_bot_env
+python3 -m venv wiki_bot_env
 source wiki_bot_env/bin/activate
 python3 --version # needs to be 3.8 or higher
-python3 -m pip install -r /BilkaBot/dependencies.txt
+python3 -m pip install -r BilkaBot/dependencies.txt
 deactivate
 bash BilkaBot/easy-update.sh # start bot, as usual
 ```
