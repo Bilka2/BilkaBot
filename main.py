@@ -60,8 +60,6 @@ async def check_feed(name: str, feed_data, feeds):
       await wiki_updated(name, feed_data, feed, feeds)
     elif name == 'forums_news':
       await forums_news_updated(name, feed_data, feed, feeds)
-  else:
-    info_log(f'Feed "{name}" was not updated.')
   
 
 async def fff_updated(name: str, feed_data, feed, feeds):
@@ -75,7 +73,7 @@ async def fff_updated(name: str, feed_data, feed, feeds):
   await channel.send(entry.title)
   
   announcement = {}
-  announcement['content'] = f'@here {entry.title}\n{entry.link}'
+  announcement['content'] = f'<@&1147146754190487602> {entry.title}\n{entry.link}'
   for url in feed_data['webhook_urls']:
     await post_data_to_webhook(url, announcement)
   msg = await run_friday_scripts()
