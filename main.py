@@ -119,14 +119,15 @@ async def forums_news_updated(name: str, feed_data, feed, feeds):
           await channel.send('<@204512563197640704>', embed=embed)
         
         forum_post_number = re.search('^https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)', entry.link).group(1)
-        announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>' + f'\n<{reddit_entry.link}>' if reddit_entry else ''
+        announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>' + (f'\n<{reddit_entry.link}>' if reddit_entry else '')
         
         info_log(announcement_msg)
-        announcement = {}
-        announcement['content'] = announcement_msg
         await channel.send(version)
-        for url in feed_data['webhook_urls']:
-          await post_data_to_webhook(url, announcement)
+        if reddit_entry:
+          announcement = {}
+          announcement['content'] = announcement_msg
+          for url in feed_data['webhook_urls']:
+            await post_data_to_webhook(url, announcement)
         wiki_msg = wiki_new_version(forum_post_number, version)
         await channel.send(wiki_msg)
     else:
