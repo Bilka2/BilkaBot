@@ -55,9 +55,9 @@ async def check_feed(name: str, feed_data, feeds):
     return
   if get_formatted_time(feed.entries[0]) > feed_data['time_latest_entry']:
     if name == 'fff':
-      await fff_updated(name, feed_data, feed, feeds)
+      pass
     elif name == 'wiki':
-      await wiki_updated(name, feed_data, feed, feeds)
+      pass
     elif name == 'forums_news':
       await forums_news_updated(name, feed_data, feed, feeds)
   
