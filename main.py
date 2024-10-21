@@ -57,9 +57,9 @@ async def check_feed(name: str, feed_data, feeds):
     if name == 'fff':
       pass
     elif name == 'wiki':
-      pass
+      await wiki_updated(name, feed_data, feed, feeds)
     elif name == 'forums_news':
-      await forums_news_updated(name, feed_data, feed, feeds)
+      pass
   
 
 async def fff_updated(name: str, feed_data, feed, feeds):
