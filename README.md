@@ -48,6 +48,7 @@ Python 3.8+
 * requests
 * beautifulsoup4
 * local clone of https://github.com/Bilka2/Wiki-scripts
+* (May need the `python3-venv` package installed on Debian for creating the virtualenv)
 
 Virtualenv setup:
 ```
