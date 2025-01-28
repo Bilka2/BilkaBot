@@ -1,6 +1,5 @@
 import asyncio
 import base64
-from bs4 import BeautifulSoup
 import datetime
 import discord
 from discord import app_commands
@@ -118,7 +117,10 @@ async def forums_news_updated(name: str, feed_data, feed, feeds):
           embed = discord.Embed(title = f'Version {version} is out but the reddit post could not be found.', color = 0xff0000, timestamp = datetime.datetime(*entry.updated_parsed[0:6]), url = entry.link)
           await channel.send('<@204512563197640704>', embed=embed)
         
-        forum_post_number = re.search('^https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)', entry.link).group(1)
+        forum_post = await loop.run_in_executor(None, requests.Session().get, entry.link)
+        # who needs beautifulsoup anyway
+        forum_post_number = re.search('<link rel="canonical" href="https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)">', forum_post.text).group(1)
+        
         announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>' + (f'\n<{reddit_entry.link}>' if reddit_entry else '')
         
         info_log(announcement_msg)
