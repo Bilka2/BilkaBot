@@ -41,7 +41,10 @@ with open('feeds.json', 'r') as f:
 async def update_feed(name: str, feed_data, feeds):
   while not client.is_closed():
     try:
-      await check_feed(name, feed_data, feeds)
+      if name == 'factorio_versions':
+        await check_factorio_versions(name, feed_data, feeds)
+      else:
+        await check_feed(name, feed_data, feeds)
     except:
       error_log(traceback.format_exc())
     await asyncio.sleep(feed_data['sleep_for'])
@@ -59,6 +62,29 @@ async def check_feed(name: str, feed_data, feeds):
       await wiki_updated(name, feed_data, feed, feeds)
     elif name == 'forums_news':
       await forums_news_updated(name, feed_data, feed, feeds)
+
+
+async def check_factorio_versions(name, feed_data, feeds):
+  factorio_versions = await loop.run_in_executor(None, requests.Session().get, feed_data['url'])
+  stable_version = factorio_versions.json()['stable']['alpha']
+  if stable_version != feed_data['latest_stable']:
+    await factorio_versions_updated(name, feed_data, stable_version, feeds)
+
+
+async def factorio_versions_updated(name: str, feed_data, stable_version, feeds):
+  feeds[name]['latest_stable'] = stable_version
+  with open('feeds.json', 'w') as f:
+    json.dump(feeds, f)
+  
+  msg = f'Version {stable_version} has been marked as stable'
+  
+  channel = client.get_channel(feed_data['channel'])
+  await channel.send(msg)
+  
+  announcement = {}
+  announcement['content'] = msg
+  for url in feed_data['webhook_urls']:
+    await post_data_to_webhook(url, announcement)
   
 
 async def fff_updated(name: str, feed_data, feed, feeds):
