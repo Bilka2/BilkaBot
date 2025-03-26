@@ -136,7 +136,7 @@ async def forums_news_updated(name: str, feed_data, feed, feeds):
         continue
       else:
         version = is_new_version.group(1)
-        reddit_url = feed_data['reddit_rss']
+        reddit_url = feed_data['reddit_url']
         reddit_entry = await get_version_entry_from_reddit(entry.title, reddit_url, 0)
         channel = client.get_channel(feed_data['channel'])
         if not reddit_entry:
@@ -147,7 +147,7 @@ async def forums_news_updated(name: str, feed_data, feed, feeds):
         # who needs beautifulsoup anyway
         forum_post_number = re.search('<link rel="canonical" href="https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)">', forum_post.text).group(1)
         
-        announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>' + (f'\n<{reddit_entry.link}>' if reddit_entry else '')
+        announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>' + (f'\n<{reddit_entry}>' if reddit_entry else '')
         
         info_log(announcement_msg)
         await channel.send(version)
@@ -166,10 +166,12 @@ async def forums_news_updated(name: str, feed_data, feed, feeds):
 
 
 async def get_version_entry_from_reddit(entry_title, reddit_url, iteration):
-  reddit_feed = await loop.run_in_executor(None, feedparser.parse, reddit_url)
-  for i, entry in enumerate(reddit_feed.entries[:5]):
-    if entry.title == entry_title:
-      return entry
+  reddit_posts = await loop.run_in_executor(None, requests.Session().get, reddit_url)
+  # who needs beautifulsoup anyway
+  reddit_post_url = re.search(f'<a.+href="/r/factorio/(\S+)"[^>]*>{entry_title}<\/a>', reddit_posts.text)
+  if reddit_post_url:
+    return 'https://www.reddit.com/r/factorio/' + reddit_post_url.group(1)
+  
   #couldn't find new version on reddit
   if iteration == 8-1:
     error_log(f'Could not find reddit post for {entry_title} within 8 * 15 seconds. Aborting.')
