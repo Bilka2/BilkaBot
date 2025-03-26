@@ -136,26 +136,20 @@ async def forums_news_updated(name: str, feed_data, feed, feeds):
         continue
       else:
         version = is_new_version.group(1)
-        reddit_url = feed_data['reddit_url']
-        reddit_entry = await get_version_entry_from_reddit(entry.title, reddit_url, 0)
         channel = client.get_channel(feed_data['channel'])
-        if not reddit_entry:
-          embed = discord.Embed(title = f'Version {version} is out but the reddit post could not be found.', color = 0xff0000, timestamp = datetime.datetime(*entry.updated_parsed[0:6]), url = entry.link)
-          await channel.send('<@204512563197640704>', embed=embed)
         
         forum_post = await loop.run_in_executor(None, requests.Session().get, entry.link)
         # who needs beautifulsoup anyway
         forum_post_number = re.search('<link rel="canonical" href="https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)">', forum_post.text).group(1)
         
-        announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>' + (f'\n<{reddit_entry}>' if reddit_entry else '')
+        announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>'
         
         info_log(announcement_msg)
         await channel.send(version)
-        if reddit_entry:
-          announcement = {}
-          announcement['content'] = announcement_msg
-          for url in feed_data['webhook_urls']:
-            await post_data_to_webhook(url, announcement)
+        announcement = {}
+        announcement['content'] = announcement_msg
+        for url in feed_data['webhook_urls']:
+          await post_data_to_webhook(url, announcement)
         wiki_msg = wiki_new_version(forum_post_number, version)
         await channel.send(wiki_msg)
     else:
@@ -163,21 +157,6 @@ async def forums_news_updated(name: str, feed_data, feed, feeds):
   feeds[name]['time_latest_entry'] = get_formatted_time(feed.entries[0])
   with open('feeds.json', 'w') as f:
     json.dump(feeds, f)
-
-
-async def get_version_entry_from_reddit(entry_title, reddit_url, iteration):
-  reddit_posts = await loop.run_in_executor(None, requests.Session().get, reddit_url)
-  # who needs beautifulsoup anyway
-  reddit_post_url = re.search(f'<a.+href="/r/factorio/(\S+)"[^>]*>{entry_title}<\/a>', reddit_posts.text)
-  if reddit_post_url:
-    return 'https://www.reddit.com/r/factorio/' + reddit_post_url.group(1)
-  
-  #couldn't find new version on reddit
-  if iteration == 8-1:
-    error_log(f'Could not find reddit post for {entry_title} within 8 * 15 seconds. Aborting.')
-    return False
-  await asyncio.sleep(15)
-  await get_version_entry_from_reddit(entry_title, reddit_url, iteration+1)
 
 
 async def post_data_to_webhook(webhook_url, data):

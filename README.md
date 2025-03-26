@@ -35,7 +35,6 @@ feeds.json:
   "channel": <id>,
   "time_latest_entry": "<time.strftime('%Y-%m-%dT%H:%M:%S+00:00', time)>",
   "sleep_for": 60,
-  "reddit_url": "https://old.reddit.com/user/FactorioTeam/submitted/?sort=new",
   "webhook_urls": ["<url>", "<url>"]},
 "factorio_versions":
   {"url": "https://factorio.com/api/latest-releases",
