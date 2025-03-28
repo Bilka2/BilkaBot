@@ -34,8 +34,7 @@ feeds.json:
   {"url": "https://forums.factorio.com/app.php/feed/news",
   "channel": <id>,
   "time_latest_entry": "<time.strftime('%Y-%m-%dT%H:%M:%S+00:00', time)>",
-  "sleep_for": 60,
-  "webhook_urls": ["<url>", "<url>"]},
+  "sleep_for": 60},
 "factorio_versions":
   {"url": "https://factorio.com/api/latest-releases",
   "channel": <id>,
