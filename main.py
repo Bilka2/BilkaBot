@@ -113,10 +113,10 @@ async def wiki_updated(name: str, feed_data, feed, feeds):
     if get_formatted_time(entry) > time_latest_entry:
       info_log('Found new wiki entry made on ' + entry.updated)
       summary = ''
-      if re.search('<p.*?>.*?<\/p>', entry.summary):
-        summary = html.unescape(tomd.convert(re.search('<p.*?>.*?<\/p>', entry.summary).group()))
+      if re.search(r'<p.*?>.*?<\/p>', entry.summary):
+        summary = html.unescape(tomd.convert(re.search(r'<p.*?>.*?<\/p>', entry.summary).group()))
         summary = re.sub(r'\((\/\S*)\)', r'(https://wiki.factorio.com\1)', summary)
-        summary = re.sub('<bdi>|<\/bdi>', '', summary)
+        summary = re.sub(r'<bdi>|<\/bdi>', '', summary)
       embed = discord.Embed(title = f'{entry.author} changed {entry.title}', color = 14103594, timestamp = datetime.datetime(*entry.updated_parsed[0:6]), url = entry.link, description = summary)
       channel = client.get_channel(feed_data['channel'])
       await channel.send(embed=embed)
@@ -131,7 +131,7 @@ async def forums_news_updated(name: str, feed_data, feed, feeds):
   time_latest_entry = feed_data['time_latest_entry']
   for i, entry in enumerate(feed.entries):
     if get_formatted_time(entry) > time_latest_entry:
-      is_new_version = re.search('^Version (\d\.\d+\.\d+$)', entry.title)
+      is_new_version = re.search(r'^Version (\d\.\d+\.\d+$)', entry.title)
       if not is_new_version or 'Friday Facts' in entry.title:
         continue
       else:
@@ -140,7 +140,7 @@ async def forums_news_updated(name: str, feed_data, feed, feeds):
         
         forum_post = await loop.run_in_executor(None, requests.Session().get, entry.link)
         # who needs beautifulsoup anyway
-        forum_post_number = re.search('<link rel="canonical" href="https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)">', forum_post.text).group(1)
+        forum_post_number = re.search(r'<link rel="canonical" href="https:\/\/forums\.factorio\.com\/viewtopic\.php\?t=(\d+)">', forum_post.text).group(1)
         
         announcement_msg = f'Version {version} released:\n<https://forums.factorio.com/{forum_post_number}>'
         
@@ -275,10 +275,10 @@ async def run_friday_scripts():
 
 
 def pretty_edit_response(response):
-  if not re.search('title":"([^"]+)"', response) or not re.search('result":"([^"]+)"', response):
+  if not re.search(r'title":"([^"]+)"', response) or not re.search(r'result":"([^"]+)"', response):
     return response
-  title = re.search('title":"([^"]+)"', response).group(1)
-  result = re.search('result":"([^"]+)"', response).group(1)
+  title = re.search(r'title":"([^"]+)"', response).group(1)
+  result = re.search(r'result":"([^"]+)"', response).group(1)
   ret = f'Edited {title}: {result}'
   if '"nochange"' in response:
     ret += ', nochange'
